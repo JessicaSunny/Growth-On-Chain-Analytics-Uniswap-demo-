@@ -1,4 +1,4 @@
-# On-Chain Growth & Marketing Analytics — Uniswap Demo
+<img width="492" height="403" alt="image" src="https://github.com/user-attachments/assets/d15ffa79-f3cb-4f7e-9293-504f5cb434d8" /># On-Chain Growth & Marketing Analytics — Uniswap Demo
 
 A self-directed project applying marketing-attribution and growth-analytics methods to on-chain data. It tracks how user activity, trading behaviour, and retention evolve on a decentralised exchange — the on-chain equivalent of the campaign-attribution and cohort work I've done in commercial analytics.
 
@@ -29,12 +29,75 @@ Built on Dune Analytics using SQL over Uniswap (Ethereum) data. Uniswap is used 
 
 ## Queries
 
-SQL for each panel is in [`/queries`](./queries):
+**01 — Daily Active Traders**
+```sql
+SELECT
+  block_date AS day,
+  COUNT(DISTINCT taker) AS active_traders,
+  COUNT(*) AS trades
+FROM dex.trades
+WHERE blockchain = 'ethereum'
+  AND project = 'uniswap'
+  AND block_date >= NOW() - INTERVAL '90' DAY
+GROUP BY 1
+ORDER BY 1;
+```
 
-- `01_daily_active_traders.sql`
-- `02_daily_volume_traders.sql`
-- `03_liquidity_tvl_proxy.sql`
-- `04_wallet_retention_4wk.sql`
+**02 — Daily Volume & Traders**
+```sql
+SELECT
+  block_date AS day,
+  SUM(amount_usd) AS volume_usd,
+  COUNT(DISTINCT taker) AS unique_traders,
+  COUNT(*) AS trades
+FROM dex.trades
+WHERE blockchain = 'ethereum'
+  AND project = 'uniswap'
+  AND block_date >= NOW() - INTERVAL '90' DAY
+GROUP BY 1
+ORDER BY 1;
+```
+
+**03 — Liquidity Activity (TVL proxy)**
+```sql
+SELECT
+  block_date AS day,
+  SUM(amount_usd) AS daily_volume_usd,
+  AVG(amount_usd) AS avg_trade_size_usd
+FROM dex.trades
+WHERE blockchain = 'ethereum'
+  AND project = 'uniswap'
+  AND block_date >= NOW() - INTERVAL '90' DAY
+GROUP BY 1
+ORDER BY 1;
+```
+
+**04 — 4-Week Wallet Retention**
+```sql
+WITH first_week AS (
+  SELECT taker AS trader, DATE_TRUNC('week', MIN(block_date)) AS cohort_week
+  FROM dex.trades
+  WHERE blockchain = 'ethereum' AND project = 'uniswap'
+  GROUP BY taker
+),
+activity AS (
+  SELECT DISTINCT taker AS trader, DATE_TRUNC('week', block_date) AS active_week
+  FROM dex.trades
+  WHERE blockchain = 'ethereum' AND project = 'uniswap'
+)
+SELECT
+  f.cohort_week,
+  COUNT(DISTINCT f.trader) AS cohort_size,
+  COUNT(DISTINCT CASE WHEN a.active_week = f.cohort_week + INTERVAL '28' DAY
+    THEN a.trader END) AS retained_wk4,
+  ROUND(100.0 * COUNT(DISTINCT CASE WHEN a.active_week = f.cohort_week + INTERVAL '28' DAY
+    THEN a.trader END) / NULLIF(COUNT(DISTINCT f.trader), 0), 1) AS retention_pct
+FROM first_week f
+LEFT JOIN activity a ON f.trader = a.trader
+WHERE f.cohort_week >= NOW() - INTERVAL '180' DAY
+GROUP BY 1
+ORDER BY 1;
+```
 
 ## Stack
 
