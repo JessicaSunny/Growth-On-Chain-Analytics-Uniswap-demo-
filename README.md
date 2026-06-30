@@ -18,7 +18,7 @@ Built on Dune Analytics using SQL over Uniswap (Ethereum) data. Uniswap is used 
 ## Key findings
 
 - Daily active traders rose through April before gradually easing back; trading volume stayed volatile with periodic spikes up to ~$2B.
-- 4-week wallet retention is **low and variable — typically 2–3%, with some cohorts reaching 7–9%** — characteristic of an open, permissionless DEX where many wallets trade once and don't return.
+- 4-week wallet retention is **low and variable — ranging from roughly 2% to over 11%, with most cohorts landing in the mid-single digits** — characteristic of an open, permissionless DEX where many wallets trade once and don't return.
 - The variation between cohorts is itself a useful signal: in a live setting the next step would be investigating what drove the higher-retention weeks (campaigns, launches, market conditions).
 
 ## Notes & limitations
